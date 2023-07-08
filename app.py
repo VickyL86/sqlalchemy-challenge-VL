@@ -130,3 +130,7 @@ def temperature_range_start_end(start, end):
     session.close()
 
     return jsonify(temperature_stats)
+
+# Run the Flask app
+if __name__ == "__main__":
+    app.run(debug=True)
