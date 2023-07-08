@@ -42,9 +42,13 @@ app = Flask(__name__)
 def welcome():
     """List all available api routes."""
     return (
+        f"Welcome to the Homepage!<br/><br/>"
+        f"Available Routes:<br/>"
         f"/api/v1.0/precipitation<br/>"
+        f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/stations"
+        f"/api/v1.0/&lt;start&gt;<br/>"
+        f"/api/v1.0/&lt;start&gt;/&lt;end&gt;"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -52,9 +56,28 @@ def precipitation():
     # Create our session (link) from Python to the DB
     session = Session(engine)
     
-    """Return a list of all passenger names"""
-    # Query all measurements
-    results = session.query(Measurement.date, Measurement.prcp).all()
+    #Retrieve only the last 12 months of data to a dictionary 
+    #using date as the key and prcp as the value.
+    
+    results=session.query(Measurement.date, Measurement.prcp).\
+        filter(Measurement.date >= '2016-08-23').\
+        filter(Measurement.date <= '2017-08-23').all()
+    
+
+    session.close()
+    
+   #Return the JSON representation of your dictionary.
+    all_prec = list(np.ravel(results))
+
+    return jsonify(all_prec)
+
+@app.route("/api/v1.0/stations")
+def stations():
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
+    
+    #Return a JSON list of stations from the dataset.
+    results=session.query(Measurement.station).all()
     
     session.close()
     
@@ -68,37 +91,42 @@ def tobs():
     # Create our session (link) from Python to the DB
     session = Session(engine)
     
-    """Return a list of all temps"""
-    # Query all measurements
-    results = session.query(Measurement.date, Measurement.tobs).all()
+    #Query the dates and temperature observations of 
+    # the most-active station for the previous year of data.
+   
+    results=session.query(Measurement.date, Measurement.tobs).\
+        filter(Measurement.date >= '2016-08-23').\
+        filter(Measurement.date <= '2017-08-23').\
+        filter(Measurement.station == 'USC00519281').all()
     
     session.close()
-    
-    # Convert list of tuples into normal list
-    all_names = list(np.ravel(results))
-    
-    return jsonify(all_names)
 
-@app.route("/api/v1.0/stations")
-def stations():
-    # Create our session (link) from Python to the DB
+    #Return a JSON list of temperature observations for the previous year.
+    all_temps = list(np.ravel(results))
+
+    return jsonify(all_temps)
+
+
+@app.route("/api/v1.0/<start>")
+def temperature_range_start(start):
+    """Return the minimum, average, and maximum temperature for a given start date"""
     session = Session(engine)
-    
-    """Return a list of all stations"""
-    # Query all measurements
-    results = session.query(Measurement.name, Measurement.latitutude, Measurement.longitude).all()
-    
+    temperature_stats = session.query(func.min(Measurement.tobs),
+                                      func.avg(Measurement.tobs),
+                                      func.max(Measurement.tobs)).\
+        filter(Measurement.date >= start).all()
     session.close()
-    
-   # Create a dictionary from the row data and append to a list of all_stations
-    all_stations = []
-    for station in results:
-        station_dict = {}
-        station_dict["station"] = station
-        all_stations.append(station_dict)
 
-    return jsonify(all_stations)
+    return jsonify(temperature_stats)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.route("/api/v1.0/<start>/<end>")
+def temperature_range_start_end(start, end):
+    """Return the minimum, average, and maximum temperature for a given start and end date range"""
+    session = Session(engine)
+    temperature_stats = session.query(func.min(Measurement.tobs),
+                                      func.avg(Measurement.tobs),
+                                      func.max(Measurement.tobs)).\
+        filter(Measurement.date >= start).filter(Measurement.date <= end).all()
+    session.close()
 
+    return jsonify(temperature_stats)
