@@ -46,13 +46,14 @@ app = Flask(__name__)
 def welcome():
     """List all available api routes."""
     return (
-        f"Welcome to the Homepage!<br/><br/>"
+        f"Welcome to the Hawaii weather API!<br/><br/>"
         f"Available Routes:<br/>"
         f"<a href='/api/v1.0/precipitation'>/api/v1.0/precipitation</a><br/>"
         f"<a href='/api/v1.0/stations'>/api/v1.0/stations</a><br/>"
-        f"<a href='/api/v1.0/tobs'>/api/v1.0/tobs</a><br/>"
-        f"<a href='/api/v1.0/&lt;start&gt;'>/api/v1.0/&lt;start&gt;</a><br/>"
-        f"<a href='/api/v1.0/&lt;start&gt;/&lt;end&gt;'>/api/v1.0/&lt;start&gt;/&lt;end&gt;</a>"
+        f"<a href='/api/v1.0/tobs'>/api/v1.0/tobs</a><br/><br/>"
+        f"To access the dynamic temperature API Routes please enter dates between 2010-01-01 and 2017-08-23<br/>"
+        f"/api/v1.0/&lt;start&gt;<br/>"
+        f"/api/v1.0/&lt;start&gt;/&lt;end&gt;"
     )
 
 @app.route("/api/v1.0/precipitation")
