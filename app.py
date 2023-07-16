@@ -152,7 +152,7 @@ def temperature_range_start_end(start, end):
     # Create dictionary holding temps
     temp_stats = {
         "TMIN": temperature_stats[0][0],
-        "TAVG": temperature_stats[0][1],  # Update average calculation
+        "TAVG": temperature_stats[0][1], 
         "TMAX": temperature_stats[0][2]
     }
 
