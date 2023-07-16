@@ -1,6 +1,8 @@
 # Import the dependencies.
 import numpy as np
 
+import os
+
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
@@ -13,7 +15,9 @@ from flask import Flask, jsonify
 #################################################
 # Database Setup
 #################################################
-engine = create_engine("sqlite:///Resources/hawaii.sqlite")
+base_dir = os.path.abspath(os.path.dirname(__file__))
+db_path = os.path.join(base_dir, "Resources", "hawaii.sqlite")
+engine = create_engine(f"sqlite:///{db_path}")
 
 # reflect an existing database into a new model
 base = automap_base()
@@ -44,11 +48,11 @@ def welcome():
     return (
         f"Welcome to the Homepage!<br/><br/>"
         f"Available Routes:<br/>"
-        f"/api/v1.0/precipitation<br/>"
-        f"/api/v1.0/stations<br/>"
-        f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/&lt;start&gt;<br/>"
-        f"/api/v1.0/&lt;start&gt;/&lt;end&gt;"
+        f"<a href='/api/v1.0/precipitation'>/api/v1.0/precipitation</a><br/>"
+        f"<a href='/api/v1.0/stations'>/api/v1.0/stations</a><br/>"
+        f"<a href='/api/v1.0/tobs'>/api/v1.0/tobs</a><br/>"
+        f"<a href='/api/v1.0/&lt;start&gt;'>/api/v1.0/&lt;start&gt;</a><br/>"
+        f"<a href='/api/v1.0/&lt;start&gt;/&lt;end&gt;'>/api/v1.0/&lt;start&gt;/&lt;end&gt;</a>"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -114,10 +118,22 @@ def temperature_range_start(start):
     temperature_stats = session.query(func.min(Measurement.tobs),
                                       func.avg(Measurement.tobs),
                                       func.max(Measurement.tobs)).\
-        filter(Measurement.date >= start).all()
+        filter(Measurement.date == start).all()
     session.close()
+    if temperature_stats[0][0] is None or temperature_stats[0][2] is None:
+        # Return an error message if there is no data available
+        return jsonify({"error": "Please try a date between 2010-01-01 and 2017-08-23."}), 404
 
-    return jsonify(temperature_stats)
+    # Create dictionary holding temps
+    temp_stats = {
+        "TMIN": temperature_stats[0][0],
+        "TAVG": temperature_stats[0][1],  
+        "TMAX": temperature_stats[0][2]
+    }
+
+    return jsonify(temp_stats)
+
+
 
 @app.route("/api/v1.0/<start>/<end>")
 def temperature_range_start_end(start, end):
@@ -129,7 +145,20 @@ def temperature_range_start_end(start, end):
         filter(Measurement.date >= start).filter(Measurement.date <= end).all()
     session.close()
 
-    return jsonify(temperature_stats)
+    if temperature_stats[0][0] is None or temperature_stats[0][2] is None:
+        # Return an error message if there is no data available
+        return jsonify({"error": "Please try a date between 2010-01-01 and 2017-08-23."}), 404
+
+    # Create dictionary holding temps
+    temp_stats = {
+        "TMIN": temperature_stats[0][0],
+        "TAVG": temperature_stats[0][1],  # Update average calculation
+        "TMAX": temperature_stats[0][2]
+    }
+
+    return jsonify(temp_stats)
+
+
 
 # Run the Flask app
 if __name__ == "__main__":
